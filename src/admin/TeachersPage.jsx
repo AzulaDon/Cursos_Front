@@ -18,7 +18,7 @@ function Modal({ title, onClose, children }) {
   )
 }
 
-function TeacherForm({ initial = {}, onSave, onClose }) {
+function TeacherForm({ initial = {}, onSave, onClose, saving }) {
   const [name,      setName]      = useState(initial.name      || '')
   const [email,     setEmail]     = useState(initial.email     || '')
   const [specialty, setSpecialty] = useState(initial.specialty || '')
@@ -29,6 +29,7 @@ function TeacherForm({ initial = {}, onSave, onClose }) {
     e.preventDefault()
     if (!name.trim() || !email.trim() || !specialty.trim()) { setErr('Todos los campos son requeridos.'); return }
     if (!/\S+@\S+\.\S+/.test(email)) { setErr('Ingresa un correo válido.'); return }
+    setErr('')
     onSave({ name: name.trim(), email: email.trim(), specialty: specialty.trim() })
   }
 
@@ -61,8 +62,10 @@ function TeacherForm({ initial = {}, onSave, onClose }) {
       </div>
       {err && <p style={{ fontSize: 13, color: '#E06C75', background: '#E06C7511', borderRadius: 8, padding: '8px 12px' }}>⚠️ {err}</p>}
       <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 8 }}>
-        <button type="button" onClick={onClose} style={btnSecondary}>Cancelar</button>
-        <button type="submit" style={btnPrimary}>{initial.id ? 'Guardar cambios' : 'Dar de alta'}</button>
+        <button type="button" onClick={onClose} style={btnSecondary} disabled={saving}>Cancelar</button>
+        <button type="submit" style={{ ...btnPrimary, opacity: saving ? 0.7 : 1 }} disabled={saving}>
+          {saving ? '⏳ Guardando...' : initial.id ? 'Guardar cambios' : 'Dar de alta'}
+        </button>
       </div>
     </form>
   )
@@ -70,10 +73,12 @@ function TeacherForm({ initial = {}, onSave, onClose }) {
 
 export default function TeachersPage() {
   const { teachers, courses, addTeacher, updateTeacher, deleteTeacher } = useStore()
-  const [modal,    setModal]    = useState(null) // null | 'add' | {teacher}
-  const [search,   setSearch]   = useState('')
-  const [confirm,  setConfirm]  = useState(null) // teacher to delete
-  const [toast,    setToast]    = useState('')
+  const [modal,   setModal]   = useState(null)
+  const [search,  setSearch]  = useState('')
+  const [confirm, setConfirm] = useState(null)
+  const [toast,   setToast]   = useState('')
+  const [saving,  setSaving]  = useState(false)
+  const [apiErr,  setApiErr]  = useState('')
 
   function showToast(msg) { setToast(msg); setTimeout(() => setToast(''), 3000) }
 
@@ -83,44 +88,60 @@ export default function TeachersPage() {
     t.specialty.toLowerCase().includes(search.toLowerCase())
   )
 
-  function handleSave(data) {
-    if (modal === 'add') {
-      addTeacher(data)
-      showToast(`✅ Profesor "${data.name}" dado de alta`)
-    } else {
-      updateTeacher(modal.id, data)
-      showToast(`✅ Profesor actualizado`)
+  async function handleSave(data) {
+    setSaving(true)
+    setApiErr('')
+    try {
+      if (modal === 'add') {
+        await addTeacher(data)
+        showToast(`✅ Profesor "${data.name}" dado de alta`)
+      } else {
+        await updateTeacher(modal.id, data)
+        showToast('✅ Profesor actualizado')
+      }
+      setModal(null)
+    } catch (e) {
+      setApiErr(e.message)
+    } finally {
+      setSaving(false)
     }
-    setModal(null)
   }
 
-  function handleDelete() {
-    deleteTeacher(confirm.id)
-    showToast(`🗑️ Profesor "${confirm.name}" eliminado`)
-    setConfirm(null)
+  async function handleDelete() {
+    setSaving(true)
+    try {
+      await deleteTeacher(confirm.id)
+      showToast(`🗑️ Profesor "${confirm.name}" eliminado`)
+      setConfirm(null)
+    } catch (e) {
+      setApiErr(e.message)
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-      {/* Toast */}
       {toast && (
         <div style={{ position: 'fixed', bottom: 28, right: 28, background: C.secondary, border: `1px solid ${C.objects}`, borderRadius: 12, padding: '12px 20px', color: C.textPrimary, fontSize: 14, zIndex: 300, boxShadow: '0 8px 24px #00000055' }}>
           {toast}
         </div>
       )}
 
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-        <div>
-          <p style={{ fontSize: 14, color: C.textDisabled }}>{teachers.length} profesores registrados</p>
+      {apiErr && (
+        <div style={{ background: '#E06C7522', border: '1px solid #E06C7544', borderRadius: 10, padding: '10px 16px', color: '#E06C75', fontSize: 13 }}>
+          ⚠️ {apiErr}
         </div>
+      )}
+
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+        <p style={{ fontSize: 14, color: C.textDisabled }}>{teachers.length} profesores registrados</p>
         <div style={{ display: 'flex', gap: 10 }}>
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 Buscar profesor..." style={{ ...inputStyle, width: 240 }} />
-          <button onClick={() => setModal('add')} style={btnPrimary}>+ Dar de alta</button>
+          <button onClick={() => { setApiErr(''); setModal('add') }} style={btnPrimary}>+ Dar de alta</button>
         </div>
       </div>
 
-      {/* Table */}
       <div style={{ ...card, padding: 0, overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
@@ -155,7 +176,7 @@ export default function TeachersPage() {
                   <td style={{ padding: '14px 20px', fontSize: 12, color: C.textDisabled }}>{t.createdAt}</td>
                   <td style={{ padding: '14px 20px' }}>
                     <div style={{ display: 'flex', gap: 8 }}>
-                      <button onClick={() => setModal(t)} style={btnIcon}>✏️ Editar</button>
+                      <button onClick={() => { setApiErr(''); setModal(t) }} style={btnIcon}>✏️ Editar</button>
                       <button onClick={() => setConfirm(t)} style={btnDanger}>🗑️</button>
                     </div>
                   </td>
@@ -166,14 +187,13 @@ export default function TeachersPage() {
         </table>
       </div>
 
-      {/* Add/Edit modal */}
       {modal !== null && (
         <Modal title={modal === 'add' ? 'Dar de alta profesor' : `Editar: ${modal.name}`} onClose={() => setModal(null)}>
-          <TeacherForm initial={modal === 'add' ? {} : modal} onSave={handleSave} onClose={() => setModal(null)} />
+          <TeacherForm initial={modal === 'add' ? {} : modal} onSave={handleSave} onClose={() => setModal(null)} saving={saving} />
+          {apiErr && <p style={{ fontSize: 13, color: '#E06C75', marginTop: 8 }}>⚠️ {apiErr}</p>}
         </Modal>
       )}
 
-      {/* Confirm delete */}
       {confirm && (
         <Modal title="Confirmar eliminación" onClose={() => setConfirm(null)}>
           <p style={{ fontSize: 14, color: C.textSecondary, marginBottom: 8 }}>
@@ -182,7 +202,9 @@ export default function TeachersPage() {
           <p style={{ fontSize: 13, color: '#E06C75', marginBottom: 24 }}>Esta acción no se puede deshacer.</p>
           <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
             <button onClick={() => setConfirm(null)} style={btnSecondary}>Cancelar</button>
-            <button onClick={handleDelete} style={{ ...btnPrimary, background: '#E06C75' }}>Sí, eliminar</button>
+            <button onClick={handleDelete} disabled={saving} style={{ ...btnPrimary, background: '#E06C75', opacity: saving ? 0.7 : 1 }}>
+              {saving ? '⏳ Eliminando...' : 'Sí, eliminar'}
+            </button>
           </div>
         </Modal>
       )}

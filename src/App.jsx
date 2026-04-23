@@ -3,7 +3,10 @@ import { StoreProvider } from './store'
 import LoginPage   from './admin/LoginPage'
 import AdminLayout from './admin/AdminLayout'
 
-// ─── Public site (course catalog) ─────────────────────────────────────────
+// ─── Colores del tema ───────────────────────────────────────────────────────
+const C = { primary:'#181126', secondary:'#2D1F40', objects:'#42378C', objects2:'#4E41A6', accent:'#D98B79', textPrimary:'#EAEAF0', textSecondary:'#B8B5C9', textDisabled:'#6B6785', border:'#42378C33' }
+
+// ─── Datos estáticos del catálogo público ──────────────────────────────────
 const NAV_LINKS  = ['Explorar', 'Mis cursos', 'Instructores', 'Empresas']
 const CATEGORIES = ['Desarrollo Web','UI/UX Design','Inteligencia Artificial','Apps Móviles','Ciberseguridad','Cloud & DevOps','Data Science','Videojuegos']
 const CAT_ICONS  = { 'Desarrollo Web':'⚡','UI/UX Design':'🎨','Inteligencia Artificial':'🤖','Apps Móviles':'📱','Ciberseguridad':'🔐','Cloud & DevOps':'☁️','Data Science':'📊','Videojuegos':'🎮' }
@@ -16,8 +19,6 @@ const COURSES = [
   { id:5, title:'Hacking ético y pentesting',               instructor:'Sofía Vargas',   avatar:'SV', avatarBg:'#4E41A6', rating:4.8, reviews:4210, price:329, original:1199, duration:'44h', level:'Básico',     tag:'Popular',    tagBg:'#42378C', tagFg:'#EAEAF0', emoji:'🔐', category:'Ciberseguridad',         bg:'linear-gradient(135deg,#181126,#4E41A6)' },
   { id:6, title:'AWS & Docker: Infraestructura moderna',    instructor:'Pedro Alonso',   avatar:'PA', avatarBg:'#D98B79', rating:4.6, reviews:987,  price:349, original:1099, duration:'28h', level:'Avanzado',   tag:'Nuevo',      tagBg:'#42378C', tagFg:'#EAEAF0', emoji:'☁️', category:'Cloud & DevOps',         bg:'linear-gradient(135deg,#2D1F40,#D98B7944)' },
 ]
-
-const C = { primary:'#181126', secondary:'#2D1F40', objects:'#42378C', objects2:'#4E41A6', accent:'#D98B79', textPrimary:'#EAEAF0', textSecondary:'#B8B5C9', textDisabled:'#6B6785', border:'#42378C33' }
 
 function Stars({ r }) { return <span style={{color:'#D98B79',fontSize:12}}>{'★'.repeat(Math.floor(r))}{'☆'.repeat(5-Math.floor(r))}</span> }
 
@@ -68,7 +69,6 @@ function PublicSite({ onAdminClick }) {
     <div style={{minHeight:'100vh',background:C.primary,fontFamily:"'DM Sans',sans-serif",color:C.textPrimary}}>
       {toast && <div style={{position:'fixed',bottom:32,right:32,background:C.secondary,border:`1px solid ${C.objects}`,borderRadius:12,padding:'12px 20px',fontSize:14,zIndex:999,boxShadow:'0 8px 32px #00000066'}}>{toast}</div>}
 
-      {/* NAV */}
       <nav style={{background:C.secondary,borderBottom:`1px solid ${C.border}`,position:'sticky',top:0,zIndex:100}}>
         <div style={{maxWidth:1280,margin:'0 auto',padding:'0 32px',height:64,display:'flex',alignItems:'center',gap:24}}>
           <div style={{display:'flex',alignItems:'center',gap:10,flexShrink:0}}>
@@ -94,7 +94,6 @@ function PublicSite({ onAdminClick }) {
         </div>
       </nav>
 
-      {/* HERO */}
       <section style={{background:'linear-gradient(135deg,#2D1F40 0%,#181126 60%)',borderBottom:`1px solid ${C.border}`,padding:'72px 32px'}}>
         <div style={{maxWidth:1280,margin:'0 auto',display:'grid',gridTemplateColumns:'1fr 420px',gap:48,alignItems:'center'}}>
           <div>
@@ -104,18 +103,12 @@ function PublicSite({ onAdminClick }) {
             <h1 style={{fontSize:52,fontWeight:800,fontFamily:"'Syne',sans-serif",lineHeight:1.1,marginBottom:20}}>
               Aprende sin <span style={{color:'#D98B79'}}>límites.</span><br/>Crece sin <span style={{color:'#9B94E0'}}>fronteras.</span>
             </h1>
-            <p style={{fontSize:18,color:C.textSecondary,lineHeight:1.7,marginBottom:32,maxWidth:500}}>Domina las habilidades más demandadas con instructores expertos. Desde desarrollo web hasta inteligencia artificial.</p>
+            <p style={{fontSize:18,color:C.textSecondary,lineHeight:1.7,marginBottom:32,maxWidth:500}}>Domina las habilidades más demandadas con instructores expertos.</p>
             <div style={{display:'flex',gap:12}}>
               <button style={{background:'#D98B79',border:'none',borderRadius:12,padding:'14px 32px',color:'#181126',fontSize:16,fontWeight:700,cursor:'pointer'}}>Explorar cursos →</button>
               <button style={{background:'transparent',border:`1px solid ${C.objects}`,borderRadius:12,padding:'14px 24px',color:C.textPrimary,fontSize:15,cursor:'pointer'}}>Ver demo gratis</button>
             </div>
-            <div style={{display:'flex',gap:40,marginTop:48}}>
-              {[['85k+','Estudiantes'],['200+','Cursos'],['50+','Instructores'],['4.8★','Rating']].map(([n,l])=>(
-                <div key={l}><p style={{fontSize:24,fontWeight:800,fontFamily:"'Syne',sans-serif"}}>{n}</p><p style={{fontSize:12,color:C.textDisabled,marginTop:2}}>{l}</p></div>
-              ))}
-            </div>
           </div>
-          {/* Hero card */}
           <div style={{background:C.secondary,borderRadius:20,border:`1px solid ${C.border}`,padding:24,display:'flex',flexDirection:'column',gap:12}}>
             <p style={{fontSize:13,color:C.textDisabled,marginBottom:4}}>Curso en progreso</p>
             <div style={{background:C.primary,borderRadius:12,padding:16,border:`1px solid ${C.border}`}}>
@@ -126,19 +119,10 @@ function PublicSite({ onAdminClick }) {
               <div style={{background:`${C.objects}44`,borderRadius:6,height:8,overflow:'hidden'}}><div style={{width:'52%',height:'100%',background:'linear-gradient(90deg,#4E41A6,#D98B79)',borderRadius:6}}/></div>
               <div style={{display:'flex',justifyContent:'space-between',marginTop:6}}><span style={{fontSize:11,color:C.textDisabled}}>52% completado</span><span style={{fontSize:11,color:'#D98B79'}}>19.7h restantes</span></div>
             </div>
-            <div style={{background:`${C.objects2}22`,border:`1px solid ${C.objects2}44`,borderRadius:12,padding:'12px 16px',display:'flex',alignItems:'center',gap:12}}>
-              <span style={{fontSize:24}}>🏆</span><div><p style={{fontSize:13,fontWeight:600}}>¡Racha de 7 días!</p><p style={{fontSize:11,color:'#9B94E0'}}>Sigue aprendiendo</p></div>
-            </div>
-            <div style={{background:C.secondary,border:`1px solid ${C.border}`,borderRadius:12,padding:'12px 16px',display:'flex',alignItems:'center',gap:12}}>
-              <div style={{width:36,height:36,borderRadius:8,background:`${C.accent}22`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18}}>▶️</div>
-              <div style={{flex:1}}><p style={{fontSize:12,color:C.textDisabled}}>Siguiente lección</p><p style={{fontSize:13,fontWeight:600}}>Hooks avanzados: useCallback</p></div>
-              <span style={{fontSize:11,color:C.textDisabled}}>24 min</span>
-            </div>
           </div>
         </div>
       </section>
 
-      {/* CATEGORIES */}
       <section style={{maxWidth:1280,margin:'0 auto',padding:'52px 32px 0'}}>
         <h2 style={{fontSize:26,fontWeight:700,fontFamily:"'Syne',sans-serif",marginBottom:20}}>Explorar categorías</h2>
         <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
@@ -151,7 +135,6 @@ function PublicSite({ onAdminClick }) {
         </div>
       </section>
 
-      {/* COURSE GRID */}
       <section style={{maxWidth:1280,margin:'0 auto',padding:'36px 32px 64px'}}>
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:24}}>
           <h2 style={{fontSize:26,fontWeight:700,fontFamily:"'Syne',sans-serif"}}>{activeCat||'Cursos destacados'} <span style={{fontSize:14,fontWeight:400,color:C.textDisabled,marginLeft:8}}>{filtered.length} cursos</span></h2>
@@ -164,20 +147,6 @@ function PublicSite({ onAdminClick }) {
         }
       </section>
 
-      {/* CTA BANNER */}
-      <section style={{maxWidth:1280,margin:'0 auto',padding:'0 32px 64px'}}>
-        <div style={{background:'linear-gradient(135deg,#2D1F40,#4E41A6)',borderRadius:24,padding:'56px 64px',display:'flex',alignItems:'center',justifyContent:'space-between',gap:32,border:`1px solid ${C.objects2}44`}}>
-          <div>
-            <h2 style={{fontSize:36,fontWeight:800,fontFamily:"'Syne',sans-serif",marginBottom:12}}>¿Listo para empezar?</h2>
-            <p style={{fontSize:16,color:C.textSecondary,maxWidth:500,lineHeight:1.7}}>Únete a más de 85,000 estudiantes. Primer mes gratis.</p>
-          </div>
-          <div style={{display:'flex',flexDirection:'column',gap:10,flexShrink:0}}>
-            <button style={{background:'#D98B79',border:'none',borderRadius:12,padding:'16px 40px',color:'#181126',fontSize:16,fontWeight:700,cursor:'pointer'}}>Comenzar gratis →</button>
-            <p style={{fontSize:12,color:'#9B94E0',textAlign:'center'}}>Sin tarjeta de crédito</p>
-          </div>
-        </div>
-      </section>
-
       <footer style={{background:C.secondary,borderTop:`1px solid ${C.border}`,padding:32,textAlign:'center'}}>
         <p style={{fontSize:13,color:C.textDisabled}}>© 2026 MysticLearn · Todos los derechos reservados</p>
       </footer>
@@ -185,22 +154,38 @@ function PublicSite({ onAdminClick }) {
   )
 }
 
-// ─── Root ──────────────────────────────────────────────────────────────────
+// ─── Root ───────────────────────────────────────────────────────────────────
 export default function App() {
-  const [view,      setView]      = useState('public') // 'public' | 'login' | 'admin'
-  const [loggedIn,  setLoggedIn]  = useState(false)
+  // Verificar si ya hay sesión guardada
+  const [view,     setView]     = useState(() => {
+    const token = localStorage.getItem('token')
+    return token ? 'admin' : 'public'
+  })
+  const [loggedIn, setLoggedIn] = useState(() => !!localStorage.getItem('token'))
+
+  function handleLogin(userData) {
+    setLoggedIn(true)
+    setView('admin')
+  }
+
+  function handleLogout() {
+    localStorage.removeItem('token')
+    localStorage.removeItem('usuario')
+    setLoggedIn(false)
+    setView('public')
+  }
 
   if (view === 'login' || (view === 'admin' && !loggedIn)) {
     return (
       <StoreProvider>
-        <LoginPage onLogin={() => { setLoggedIn(true); setView('admin') }} />
+        <LoginPage onLogin={handleLogin} />
       </StoreProvider>
     )
   }
   if (view === 'admin' && loggedIn) {
     return (
       <StoreProvider>
-        <AdminLayout onLogout={() => { setLoggedIn(false); setView('public') }} />
+        <AdminLayout onLogout={handleLogout} />
       </StoreProvider>
     )
   }

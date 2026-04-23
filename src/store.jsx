@@ -1,133 +1,218 @@
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import { docentes, cursos, admin, calificaciones } from './api'
 
-// ── Seed data ──────────────────────────────────────────────────────────────
-const SEED_TEACHERS = [
-  { id: 1, name: 'María González',  email: 'maria@mysticlearn.mx',  specialty: 'React · TypeScript', avatar: 'MG', avatarBg: '#4E41A6', createdAt: '2025-10-12' },
-  { id: 2, name: 'Ana Torres',      email: 'ana@mysticlearn.mx',    specialty: 'IA · Python',        avatar: 'AT', avatarBg: '#42378C', createdAt: '2025-11-03' },
-  { id: 3, name: 'Carlos Ruiz',     email: 'carlos@mysticlearn.mx', specialty: 'UI/UX · Figma',      avatar: 'CR', avatarBg: '#D98B79', createdAt: '2026-01-18' },
-  { id: 4, name: 'Sofía Vargas',    email: 'sofia@mysticlearn.mx',  specialty: 'Ciberseguridad',     avatar: 'SV', avatarBg: '#4E41A6', createdAt: '2026-02-05' },
-]
-
-const SEED_COURSES = [
-  {
-    id: 1, teacherId: 1, name: 'React & TypeScript: De cero a producción',
-    category: 'Desarrollo Web', rating: 4.9, totalRatings: 3841,
-    createdAt: '2025-11-01',
-    videos: [
-      { id: 'v1', title: 'Introducción al curso',         duration: '12:30', order: 1 },
-      { id: 'v2', title: 'Configuración del entorno',     duration: '18:45', order: 2 },
-      { id: 'v3', title: 'Componentes y props',           duration: '24:10', order: 3 },
-      { id: 'v4', title: 'Estado con useState',           duration: '31:20', order: 4 },
-      { id: 'v5', title: 'Efectos con useEffect',         duration: '28:55', order: 5 },
-    ],
-  },
-  {
-    id: 2, teacherId: 2, name: 'Python para IA: Machine Learning práctico',
-    category: 'Inteligencia Artificial', rating: 4.9, totalRatings: 5672,
-    createdAt: '2025-12-10',
-    videos: [
-      { id: 'v6',  title: 'Fundamentos de Python para IA', duration: '20:00', order: 1 },
-      { id: 'v7',  title: 'NumPy y Pandas',                duration: '35:00', order: 2 },
-      { id: 'v8',  title: 'Regresión lineal',              duration: '40:00', order: 3 },
-    ],
-  },
-  {
-    id: 3, teacherId: 3, name: 'Diseño de sistemas con Figma avanzado',
-    category: 'UI/UX Design', rating: 4.8, totalRatings: 2105,
-    createdAt: '2026-01-20',
-    videos: [
-      { id: 'v9',  title: 'Introducción a Figma',         duration: '15:00', order: 1 },
-      { id: 'v10', title: 'Componentes y variantes',      duration: '22:30', order: 2 },
-      { id: 'v11', title: 'Auto Layout avanzado',         duration: '27:00', order: 3 },
-      { id: 'v12', title: 'Design Tokens',                duration: '19:45', order: 4 },
-    ],
-  },
-]
-
-const SEED_PROGRESS = [
-  { userId: 'u1', userName: 'Pedro Alonso',    userAvatar: 'PA', avatarBg: '#6B6785', courseId: 1, percent: 85, lastSeen: '2026-04-20', videosWatched: 4, totalVideos: 5 },
-  { userId: 'u2', userName: 'Laura Méndez',    userAvatar: 'LM', avatarBg: '#4E41A6', courseId: 1, percent: 40, lastSeen: '2026-04-18', videosWatched: 2, totalVideos: 5 },
-  { userId: 'u3', userName: 'Ricardo Flores',  userAvatar: 'RF', avatarBg: '#D98B79', courseId: 1, percent: 100, lastSeen: '2026-04-15', videosWatched: 5, totalVideos: 5 },
-  { userId: 'u4', userName: 'Carmen Vega',     userAvatar: 'CV', avatarBg: '#42378C', courseId: 2, percent: 67, lastSeen: '2026-04-19', videosWatched: 2, totalVideos: 3 },
-  { userId: 'u5', userName: 'Diego Salinas',   userAvatar: 'DS', avatarBg: '#4E41A6', courseId: 2, percent: 33, lastSeen: '2026-04-17', videosWatched: 1, totalVideos: 3 },
-  { userId: 'u6', userName: 'Valeria Cruz',    userAvatar: 'VC', avatarBg: '#D98B79', courseId: 3, percent: 75, lastSeen: '2026-04-21', videosWatched: 3, totalVideos: 4 },
-  { userId: 'u7', userName: 'Marcos León',     userAvatar: 'ML', avatarBg: '#42378C', courseId: 3, percent: 25, lastSeen: '2026-04-16', videosWatched: 1, totalVideos: 4 },
-  { userId: 'u8', userName: 'Isabela Mora',    userAvatar: 'IM', avatarBg: '#6B6785', courseId: 1, percent: 60, lastSeen: '2026-04-20', videosWatched: 3, totalVideos: 5 },
-]
-
-const SEED_REVIEWS = [
-  { id: 1, userId: 'u3', userName: 'Ricardo Flores', userAvatar: 'RF', avatarBg: '#D98B79', courseId: 1, stars: 5, comment: 'Excelente curso, muy completo y bien explicado.', date: '2026-04-15' },
-  { id: 2, userId: 'u1', userName: 'Pedro Alonso',   userAvatar: 'PA', avatarBg: '#6B6785', courseId: 1, stars: 5, comment: 'Aprendí muchísimo. El instructor explica muy claro.', date: '2026-04-20' },
-  { id: 3, userId: 'u2', userName: 'Laura Méndez',   userAvatar: 'LM', avatarBg: '#4E41A6', courseId: 1, stars: 4, comment: 'Muy buen contenido, algunos videos podrían ser más cortos.', date: '2026-04-18' },
-  { id: 4, userId: 'u4', userName: 'Carmen Vega',    userAvatar: 'CV', avatarBg: '#42378C', courseId: 2, stars: 5, comment: 'La mejor introducción a ML que he encontrado.', date: '2026-04-19' },
-  { id: 5, userId: 'u5', userName: 'Diego Salinas',  userAvatar: 'DS', avatarBg: '#4E41A6', courseId: 2, stars: 4, comment: 'Muy completo. Me gustaría más ejercicios prácticos.', date: '2026-04-17' },
-  { id: 6, userId: 'u6', userName: 'Valeria Cruz',   userAvatar: 'VC', avatarBg: '#D98B79', courseId: 3, stars: 5, comment: 'Figma nunca había sido tan claro. 100% recomendado.', date: '2026-04-21' },
-  { id: 7, userId: 'u7', userName: 'Marcos León',    userAvatar: 'ML', avatarBg: '#42378C', courseId: 3, stars: 3, comment: 'Buen curso pero avanza muy rápido al principio.', date: '2026-04-16' },
-]
-
-// ── Context ────────────────────────────────────────────────────────────────
 const StoreCtx = createContext(null)
 
+const AVATAR_COLORS = ['#4E41A6', '#D98B79', '#42378C', '#6B6785']
+
+function makeAvatar(name) {
+  return name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()
+}
+
+// Mapea la respuesta del backend a la forma que usa el frontend
+function mapDocente(d, i) {
+  return {
+    id:        d.id,
+    name:      d.nombre,
+    email:     d.correo,
+    specialty: d.especialidad,
+    avatar:    makeAvatar(d.nombre),
+    avatarBg:  AVATAR_COLORS[d.id % 4],
+    createdAt: d.fechaRegistro?.slice(0, 10) ?? '—',
+  }
+}
+
+function mapCurso(c) {
+  return {
+    id:           c.id,
+    teacherId:    c.docenteId,
+    name:         c.titulo,
+    category:     c.categoria ?? '—',
+    rating:       c.calificacionPromedio ?? 0,
+    totalRatings: c.totalCalificaciones ?? 0,
+    estatus:      c.estatus,
+    createdAt:    c.fechaCreacion?.slice(0, 10) ?? '—',
+    videos:       [],   // se cargan aparte cuando se necesiten
+  }
+}
+
+function mapProgreso(p) {
+  return {
+    userId:        String(p.inscripcionId),
+    userName:      p.estudiante,
+    userAvatar:    makeAvatar(p.estudiante),
+    avatarBg:      AVATAR_COLORS[p.inscripcionId % 4],
+    courseId:      p.cursoId ?? 0,
+    courseName:    p.curso,
+    percent:       Math.round(p.avancePorcentaje ?? 0),
+    lastSeen:      '—',
+    videosWatched: p.videosVistos ?? 0,
+    totalVideos:   0,
+    finalizado:    p.finalizado,
+  }
+}
+
+function mapReview(r) {
+  return {
+    id:          r.id,
+    userId:      String(r.inscripcionId),
+    userName:    r.usuarioNombre,
+    userAvatar:  makeAvatar(r.usuarioNombre),
+    avatarBg:    AVATAR_COLORS[r.id % 4],
+    courseId:    r.cursoId,
+    stars:       r.estrellas,
+    comment:     r.comentario ?? '',
+    date:        r.fechaResena?.slice(0, 10) ?? '—',
+  }
+}
+
 export function StoreProvider({ children }) {
-  const [teachers, setTeachers]   = useState(SEED_TEACHERS)
-  const [courses,  setCourses]    = useState(SEED_COURSES)
-  const [progress]                = useState(SEED_PROGRESS)
-  const [reviews]                 = useState(SEED_REVIEWS)
-  const [nextTeacherId, setNextTId] = useState(SEED_TEACHERS.length + 1)
-  const [nextCourseId,  setNextCId] = useState(SEED_COURSES.length  + 1)
-  const [nextReviewId]              = useState(SEED_REVIEWS.length  + 1)
+  const [teachers,  setTeachers]  = useState([])
+  const [courses,   setCourses]   = useState([])
+  const [progress,  setProgress]  = useState([])
+  const [reviews,   setReviews]   = useState([])
+  const [loading,   setLoading]   = useState(true)
+  const [error,     setError]     = useState(null)
 
-  const AVATAR_COLORS = ['#4E41A6','#D98B79','#42378C','#6B6785']
-
-  function addTeacher(data) {
-    const initials = data.name.split(' ').slice(0,2).map(w => w[0]).join('').toUpperCase()
-    const teacher = {
-      id: nextTeacherId,
-      ...data,
-      avatar: initials,
-      avatarBg: AVATAR_COLORS[nextTeacherId % 4],
-      createdAt: new Date().toISOString().slice(0,10),
+  // ── Carga inicial ────────────────────────────────────────────────────────
+  const loadAll = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const [docentesData, cursosData, progresoData, reviewsData] = await Promise.all([
+        docentes.getAll(),
+        cursos.getTodos(),
+        admin.getDashboardProgreso(),
+        admin.getDashboardCalificaciones(),
+      ])
+      setTeachers(docentesData.map(mapDocente))
+      setCourses(cursosData.map(mapCurso))
+      setProgress(progresoData.map(mapProgreso))
+      setReviews(reviewsData.map(mapReview))
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setLoading(false)
     }
-    setTeachers(prev => [...prev, teacher])
-    setNextTId(n => n + 1)
-    return teacher
+  }, [])
+
+  useEffect(() => {
+    const token = localStorage.getItem('token')
+    if (token) loadAll()
+    else setLoading(false)
+  }, [loadAll])
+
+  // ── Docentes ─────────────────────────────────────────────────────────────
+  async function addTeacher(data) {
+    const res = await docentes.create({
+      nombre:       data.name,
+      correo:       data.email,
+      especialidad: data.specialty,
+    })
+    const mapped = mapDocente(res)
+    setTeachers(prev => [...prev, mapped])
+    return mapped
   }
 
-  function updateTeacher(id, data) {
-    setTeachers(prev => prev.map(t => t.id === id ? { ...t, ...data } : t))
+  async function updateTeacher(id, data) {
+    const res = await docentes.update(id, {
+      nombre:       data.name,
+      correo:       data.email,
+      especialidad: data.specialty,
+    })
+    const mapped = mapDocente(res)
+    setTeachers(prev => prev.map(t => t.id === id ? mapped : t))
   }
 
-  function deleteTeacher(id) {
+  async function deleteTeacher(id) {
+    await docentes.delete(id)
     setTeachers(prev => prev.filter(t => t.id !== id))
   }
 
-  function addCourse(data) {
-    const course = {
-      id: nextCourseId,
-      ...data,
-      rating: 0,
-      totalRatings: 0,
-      createdAt: new Date().toISOString().slice(0,10),
-      videos: data.videos || [],
+  // ── Cursos ────────────────────────────────────────────────────────────────
+  async function addCourse(data) {
+    // 1. Crear el curso
+    const res = await cursos.create({
+      docenteId:   data.teacherId,
+      titulo:      data.name,
+      categoria:   data.category,
+      estatus:     'ACTIVO',
+    })
+    const mapped = mapCurso(res)
+
+    // 2. Crear los videos asociados en secuencia
+    const videosCreados = []
+    for (const v of data.videos) {
+      try {
+        const vRes = await import('./api').then(m => m.videos.create({
+          cursoId:        mapped.id,
+          titulo:         v.title,
+          urlStream:      v.urlStream ?? 'https://placeholder.com/video.mp4',
+          ordenSecuencia: v.order,
+          duracionSeg:    parseDuration(v.duration),
+        }))
+        videosCreados.push(mapVideo(vRes))
+      } catch (_) { /* ignorar errores individuales de video */ }
     }
-    setCourses(prev => [...prev, course])
-    setNextCId(n => n + 1)
-    return course
+
+    const full = { ...mapped, videos: videosCreados }
+    setCourses(prev => [...prev, full])
+    return full
   }
 
-  function updateCourse(id, data) {
-    setCourses(prev => prev.map(c => c.id === id ? { ...c, ...data } : c))
+  async function updateCourse(id, data) {
+    const res = await cursos.update(id, {
+      docenteId:   data.teacherId,
+      titulo:      data.name,
+      categoria:   data.category,
+      estatus:     data.estatus ?? 'ACTIVO',
+    })
+    const mapped = { ...mapCurso(res), videos: data.videos ?? [] }
+    setCourses(prev => prev.map(c => c.id === id ? mapped : c))
   }
 
-  function deleteCourse(id) {
+  async function deleteCourse(id) {
+    await cursos.delete(id)
     setCourses(prev => prev.filter(c => c.id !== id))
   }
 
   return (
-    <StoreCtx.Provider value={{ teachers, courses, progress, reviews, addTeacher, updateTeacher, deleteTeacher, addCourse, updateCourse, deleteCourse }}>
+    <StoreCtx.Provider value={{
+      teachers, courses, progress, reviews,
+      loading, error,
+      loadAll,
+      addTeacher, updateTeacher, deleteTeacher,
+      addCourse,  updateCourse,  deleteCourse,
+    }}>
       {children}
     </StoreCtx.Provider>
   )
 }
 
 export const useStore = () => useContext(StoreCtx)
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+function mapVideo(v) {
+  return {
+    id:       v.id,
+    title:    v.titulo,
+    duration: formatDuration(v.duracionSeg),
+    order:    v.ordenSecuencia,
+    urlStream: v.urlStream,
+  }
+}
+
+// "12:30" → 750 segundos
+function parseDuration(str = '') {
+  const parts = String(str).split(':').map(Number)
+  if (parts.length === 2) return (parts[0] * 60) + parts[1]
+  if (parts.length === 1 && !isNaN(parts[0])) return parts[0]
+  return 0
+}
+
+// 750 → "12:30"
+function formatDuration(secs = 0) {
+  const m = Math.floor(secs / 60)
+  const s = secs % 60
+  return `${m}:${String(s).padStart(2, '0')}`
+}

@@ -2,18 +2,11 @@ import { useState } from 'react'
 import { useStore } from '../store'
 import { C, card, inputStyle } from '../theme'
 
-function Stars({ count, size = 16, interactive = false, onSelect }) {
-  const [hover, setHover] = useState(0)
+function Stars({ count, size = 16 }) {
   return (
     <div style={{ display: 'flex', gap: 2 }}>
       {[1,2,3,4,5].map(s => (
-        <span
-          key={s}
-          onClick={() => interactive && onSelect(s)}
-          onMouseEnter={() => interactive && setHover(s)}
-          onMouseLeave={() => interactive && setHover(0)}
-          style={{ fontSize: size, color: s <= (hover || count) ? '#F5C842' : '#6B678555', cursor: interactive ? 'pointer' : 'default', transition: 'color 0.1s' }}
-        >★</span>
+        <span key={s} style={{ fontSize: size, color: s <= count ? '#F5C842' : '#6B678555' }}>★</span>
       ))}
     </div>
   )
@@ -33,7 +26,7 @@ function RatingBar({ stars, count, total }) {
 }
 
 export default function ReviewsPage() {
-  const { courses, reviews, teachers } = useStore()
+  const { courses, reviews } = useStore()
   const [selectedCourse, setSelectedCourse] = useState('all')
   const [filterStars,    setFilterStars]    = useState(0)
   const [search,         setSearch]         = useState('')
@@ -44,33 +37,29 @@ export default function ReviewsPage() {
     .filter(r => filterStars === 0 || r.stars === filterStars)
     .filter(r => !search || r.userName.toLowerCase().includes(search.toLowerCase()) || r.comment.toLowerCase().includes(search.toLowerCase()))
     .sort((a, b) => {
-      if (sortBy === 'recent')     return new Date(b.date) - new Date(a.date)
       if (sortBy === 'stars_desc') return b.stars - a.stars
       if (sortBy === 'stars_asc')  return a.stars - b.stars
-      return 0
+      return new Date(b.date) - new Date(a.date)
     })
 
-  // Global stats
   const totalReviews = reviews.length
   const avgGlobal    = totalReviews ? (reviews.reduce((a, r) => a + r.stars, 0) / totalReviews).toFixed(1) : '—'
   const dist         = [5,4,3,2,1].map(s => ({ stars: s, count: reviews.filter(r => r.stars === s).length }))
 
-  // Per-course summary
   const courseSummaries = courses.map(c => {
-    const rs   = reviews.filter(r => r.courseId === c.id)
-    const avg  = rs.length ? (rs.reduce((a, r) => a + r.stars, 0) / rs.length).toFixed(1) : '—'
-    const teacher = teachers.find(t => t.id === c.teacherId)
-    return { ...c, reviewCount: rs.length, avg, teacherName: teacher?.name || '—' }
+    const rs  = reviews.filter(r => r.courseId === c.id)
+    const avg = rs.length ? (rs.reduce((a, r) => a + r.stars, 0) / rs.length).toFixed(1) : '—'
+    return { ...c, reviewCount: rs.length, avg }
   }).sort((a, b) => b.reviewCount - a.reviewCount)
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-      {/* Top: global rating + distribution */}
+      {/* Global rating */}
       <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', gap: 16 }}>
         <div style={{ ...card, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
           <p style={{ fontSize: 13, color: C.textDisabled }}>Rating global</p>
           <p style={{ fontSize: 56, fontWeight: 800, fontFamily: "'Syne', sans-serif", color: '#F5C842', lineHeight: 1 }}>{avgGlobal}</p>
-          <Stars count={Math.round(Number(avgGlobal))} size={22} />
+          <Stars count={Math.round(Number(avgGlobal) || 0)} size={22} />
           <p style={{ fontSize: 13, color: C.textDisabled }}>{totalReviews} reseñas</p>
         </div>
         <div style={{ ...card }}>
@@ -81,15 +70,15 @@ export default function ReviewsPage() {
         </div>
       </div>
 
-      {/* Course rating table */}
+      {/* Per course */}
       <div style={{ ...card }}>
         <h3 style={{ fontSize: 16, fontWeight: 700, fontFamily: "'Syne', sans-serif", color: C.textPrimary, marginBottom: 16 }}>Calificación por curso</h3>
+        {courseSummaries.length === 0 && <p style={{ fontSize: 13, color: C.textDisabled }}>Sin datos aún.</p>}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {courseSummaries.map(c => (
             <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 0', borderBottom: `1px solid ${C.border}` }}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <p style={{ fontSize: 14, fontWeight: 600, color: C.textPrimary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</p>
-                <p style={{ fontSize: 12, color: C.textDisabled }}>{c.teacherName}</p>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
                 <Stars count={Math.round(Number(c.avg) || 0)} size={14} />
@@ -131,7 +120,6 @@ export default function ReviewsPage() {
           const course = courses.find(c => c.id === r.courseId)
           return (
             <div key={r.id} style={{ ...card, display: 'flex', gap: 16 }}>
-              {/* Avatar */}
               <div style={{ width: 42, height: 42, borderRadius: '50%', background: r.avatarBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: C.textPrimary, flexShrink: 0 }}>
                 {r.userAvatar}
               </div>
@@ -143,10 +131,10 @@ export default function ReviewsPage() {
                   </div>
                   <Stars count={r.stars} size={16} />
                 </div>
-                <p style={{ fontSize: 14, color: C.textSecondary, lineHeight: 1.6, marginBottom: 8 }}>{r.comment}</p>
+                <p style={{ fontSize: 14, color: C.textSecondary, lineHeight: 1.6, marginBottom: 8 }}>{r.comment || <em style={{ color: C.textDisabled }}>Sin comentario</em>}</p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span style={{ fontSize: 11, color: C.textDisabled }}>Curso:</span>
-                  <span style={{ fontSize: 11, background: `${C.objects2}22`, color: '#9B94E0', padding: '3px 8px', borderRadius: 6 }}>{course?.name || '—'}</span>
+                  <span style={{ fontSize: 11, background: `${C.objects2}22`, color: '#9B94E0', padding: '3px 8px', borderRadius: 6 }}>{course?.name ?? r.courseName ?? '—'}</span>
                 </div>
               </div>
             </div>
